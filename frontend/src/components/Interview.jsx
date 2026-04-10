@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const Interview = () => {
+const Interview = ({ uiVariant }) => {
     const [jobTitle, setJobTitle] = useState('');
     const [cvText, setCvText] = useState('');
     const [sessionId, setSessionId] = useState(null);
@@ -11,6 +11,7 @@ const Interview = () => {
     const [loading, setLoading] = useState(false);
     const [feedback, setFeedback] = useState(null);
     const [summary, setSummary] = useState(null);
+    const isProfessional = uiVariant === 'professional';
 
     const startInterview = async (e) => {
         e.preventDefault();
@@ -72,36 +73,43 @@ const Interview = () => {
 
     if (summary) {
         return (
-            <div className="fade-in">
-                <h1>🏆 <span className="gradient-text">Entretien Terminé</span></h1>
-                <p className="subtitle">Analyse globale de votre performance pour le poste de <strong>{summary.job_title}</strong>.</p>
-                
+            <section className={`tool-layout fade-in ${isProfessional ? 'tool-layout--professional' : ''}`}>
+                <div className="section-heading">
+                    <p className="section-kicker">Interview Review</p>
+                    <h2>{isProfessional ? 'Interview summary.' : `Session complete for ${summary.job_title}.`}</h2>
+                    <p className="subtitle">
+                        {isProfessional
+                            ? 'Review the score and feedback for each answer.'
+                            : 'Use the score as a direction, then focus on the comments to improve the next round.'}
+                    </p>
+                </div>
+
                 <div className="card">
-                    <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                        <div style={{ fontSize: '3rem', fontWeight: 'bold', color: summary.final_score > 70 ? '#10b981' : '#f59e0b' }}>
+                    <div className="score-block">
+                        <div className={`score-value ${summary.final_score > 70 ? 'score-good' : 'score-warn'}`}>
                             {summary.final_score}%
                         </div>
                         <label>Score d'aptitude global</label>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div className="stack-list">
                         {summary.details.map((detail, index) => (
                             <div key={index} className="result-box">
-                                <p style={{ marginBottom: '0.5rem' }}><strong>Question {index + 1}:</strong> {detail.question}</p>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}><em>Votre réponse: {detail.answer}</em></p>
-                                <div className="feedback-card" style={{ borderLeftColor: detail.score > 7 ? '#10b981' : '#f59e0b' }}>
+                                <p className="result-question"><strong>Question {index + 1}:</strong> {detail.question}</p>
+                                <p className="result-answer"><em>Votre réponse: {detail.answer}</em></p>
+                                <div className={`feedback-card ${detail.score > 7 ? 'feedback-strong' : 'feedback-mid'}`}>
                                     <strong>Score: {detail.score}/10</strong>
-                                    <p style={{ marginTop: '0.5rem', fontSize: '0.95rem' }}>{detail.feedback}</p>
+                                    <p>{detail.feedback}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
                     
-                    <button className="primary" onClick={() => { setSummary(null); setQuestions([]); setSessionId(null); }} style={{ marginTop: '2rem' }}>
+                    <button className="primary reset-btn" onClick={() => { setSummary(null); setQuestions([]); setSessionId(null); }}>
                         🔄 Recommencer une session
                     </button>
                 </div>
-            </div>
+            </section>
         );
     }
 
@@ -110,18 +118,25 @@ const Interview = () => {
         const progress = ((currentIndex + (feedback ? 1 : 0)) / questions.length) * 100;
 
         return (
-            <div className="fade-in">
-                <h1>🎤 <span className="gradient-text">Session d'Entretien</span></h1>
-                <p className="subtitle">Répondez aux questions comme si vous étiez face à un recruteur.</p>
+            <section className={`tool-layout fade-in ${isProfessional ? 'tool-layout--professional' : ''}`}>
+                <div className="section-heading">
+                    <p className="section-kicker">Live Session</p>
+                    <h2>{isProfessional ? 'Interview simulation in progress.' : 'Practice your answers like the interview is already scheduled.'}</h2>
+                    <p className="subtitle">
+                        {isProfessional
+                            ? 'Answer each question, then review the feedback before moving on.'
+                            : 'Take your time and answer clearly. The coach will score each response before moving on.'}
+                    </p>
+                </div>
 
                 <div className="progress-bar">
                     <div className="progress-fill" style={{ width: `${progress}%` }}></div>
                 </div>
 
                 <div className="card">
-                    <div style={{ marginBottom: '2rem' }}>
+                    <div className="question-block">
                         <label>Question {currentIndex + 1} sur {questions.length}</label>
-                        <h2 style={{ fontSize: '1.5rem', marginTop: '0.5rem' }}>{currentQuestion.text}</h2>
+                        <h3>{currentQuestion.text}</h3>
                     </div>
                     
                     {!feedback ? (
@@ -140,24 +155,49 @@ const Interview = () => {
                         </>
                     ) : (
                         <div className="feedback-card">
-                            <h3 className="gradient-text">Analyse de l'IA (Score: {feedback.score}/10)</h3>
-                            <pre style={{ marginTop: '1rem', fontStyle: 'italic' }}>{feedback.feedback}</pre>
-                            <button className="primary" onClick={nextQuestion} style={{ marginTop: '1.5rem' }}>
+                            <h3>Analyse de l'IA (Score: {feedback.score}/10)</h3>
+                            <pre className="feedback-copy">{feedback.feedback}</pre>
+                            <button className="primary next-btn" onClick={nextQuestion}>
                                 {currentIndex + 1 < questions.length ? 'Question Suivante →' : 'Terminer l\'entretien'}
                             </button>
                         </div>
                     )}
                 </div>
-            </div>
+            </section>
         );
     }
 
     return (
-        <div className="fade-in">
-            <h1>🤝 <span className="gradient-text">Coach d'Entretien IA</span></h1>
-            <p className="subtitle">Simulez un entretien d'embauche réaliste et recevez des conseils personnalisés.</p>
-            
-            <div className="card">
+        <section className={`tool-layout fade-in ${isProfessional ? 'tool-layout--professional' : ''}`}>
+            <div className="section-heading">
+                <p className="section-kicker">Interview Coach</p>
+                <h2>
+                    {isProfessional
+                        ? 'Start a focused interview practice session.'
+                        : 'Launch a rehearsal session tailored to your background.'}
+                </h2>
+                <p className="subtitle">
+                    {isProfessional
+                        ? 'Choose a role, add your CV, and begin.'
+                        : 'Paste your CV, choose the target role, and train with questions adapted to your profile.'}
+                </p>
+            </div>
+
+            <div className={`tool-grid ${isProfessional ? 'tool-grid--professional' : ''}`}>
+                {!isProfessional && (
+                    <aside className="info-panel accent-panel">
+                        <span className="panel-badge">Practice better</span>
+                        <h3>Use this before a real interview.</h3>
+                        <p>Answer out loud if you can, then write the strongest version of what you would actually say. That usually gives you better feedback than very short notes.</p>
+                        <ul className="feature-list">
+                            <li>Keep answers concrete and role-specific.</li>
+                            <li>Mention outcomes, not only responsibilities.</li>
+                            <li>Use the summary to spot weak patterns fast.</li>
+                        </ul>
+                    </aside>
+                )}
+
+                <div className="card">
                 <form onSubmit={startInterview}>
                     <div className="input-group">
                         <label>Poste visé</label>
@@ -182,8 +222,9 @@ const Interview = () => {
                         {loading ? <span className="loading-dots">Préparation de la session</span> : '🚀 Démarrer la simulation'}
                     </button>
                 </form>
+                </div>
             </div>
-        </div>
+        </section>
     );
 };
 

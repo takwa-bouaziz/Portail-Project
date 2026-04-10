@@ -1,29 +1,8 @@
-import requests
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .models import CoverLetter
-import json
-
-# Replace with your Hugging Face API Token
-HF_API_TOKEN = "your_hugging_face_token_here"
-HF_API_URL = "https://api-inference.huggingface.co/models/microsoft/Phi-3-mini-4k-instruct"
-
-def call_hf_api(prompt):
-    headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
-    payload = {
-        "inputs": prompt,
-        "parameters": {"max_new_tokens": 500}
-    }
-    try:
-        response = requests.post(HF_API_URL, headers=headers, json=payload)
-        response.raise_for_status()
-        result = response.json()
-        if isinstance(result, list) and len(result) > 0:
-            return result[0].get('generated_text', '')
-        return str(result)
-    except Exception as e:
-        return f"Error calling AI API: {str(e)}"
+from ai_client import call_hf_api, HuggingFaceConfigError
 
 @api_view(['POST'])
 def generate_cover_letter(request):
@@ -48,7 +27,15 @@ def generate_cover_letter(request):
     The letter should be formal, demonstrate enthusiasm, and highlight key matches between the CV and the job description.
     """
 
-    generated_text = call_hf_api(prompt)
+    try:
+        generated_text = call_hf_api(prompt)
+    except HuggingFaceConfigError as exc:
+        return Response({"error": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    except Exception as exc:
+        return Response(
+            {"error": f"Error calling AI API: {str(exc)}"},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
 
     # Save to database
     cover_letter = CoverLetter.objects.create(

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const CoverLetter = () => {
+const CoverLetter = ({ uiVariant }) => {
     const [formData, setFormData] = useState({
         candidate_name: '',
         job_title: '',
@@ -35,14 +35,59 @@ const CoverLetter = () => {
         alert('Copied to clipboard!');
     };
 
+    const downloadLetter = () => {
+        const content = generatedLetter || '';
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const safeName = (formData.candidate_name || 'cover-letter')
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '-');
+
+        link.href = url;
+        link.download = `${safeName}-cover-letter.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    const isProfessional = uiVariant === 'professional';
+
     return (
-        <div className="fade-in">
-            <h1><span className="gradient-text">Générateur de Lettre de Motivation</span></h1>
-            <p className="subtitle">Créez une lettre percutante et personnalisée en quelques secondes grâce à l'IA.</p>
-            
-            <div className="card">
+        <section className={`tool-layout fade-in ${isProfessional ? 'tool-layout--professional' : ''}`}>
+            <div className="section-heading">
+                <p className="section-kicker">Cover Letter</p>
+                <h2>
+                    {isProfessional
+                        ? 'Generate a clear and tailored cover letter.'
+                        : 'Compose a personalized letter that sounds prepared, not generic.'}
+                </h2>
+                <p className="subtitle">
+                    {isProfessional
+                        ? 'Add the essentials, then generate a draft you can refine.'
+                        : 'Fill in the role, your strengths, and the job description. The assistant will turn that into a more convincing first draft.'}
+                </p>
+            </div>
+
+            <div className={`tool-grid ${isProfessional ? 'tool-grid--professional' : ''}`}>
+                {!isProfessional && (
+                    <aside className="info-panel">
+                        <span className="panel-badge">How it works</span>
+                        <h3>Build stronger context before you generate.</h3>
+                        <p>Include concrete wins, tools you have used, and the employer's priorities. The more specific the input, the more believable the final letter will feel.</p>
+                        <ul className="feature-list">
+                            <li>Name the exact role and company.</li>
+                            <li>Summarize your strongest experiences in the CV box.</li>
+                            <li>Paste the mission and required skills from the offer.</li>
+                        </ul>
+                    </aside>
+                )}
+
+                <div className="card">
                 <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div className="form-row">
                         <div className="input-group">
                             <label>Nom complet</label>
                             <input name="candidate_name" placeholder="ex: Jean Dupont" onChange={handleChange} required />
@@ -87,17 +132,26 @@ const CoverLetter = () => {
 
                 {generatedLetter && (
                     <div className="result-box">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                            <h3 className="gradient-text">Votre lettre de motivation</h3>
-                            <button onClick={copyToClipboard} style={{ padding: '0.4rem 1rem', borderRadius: '8px', cursor: 'pointer' }}>
-                                📋 Copier
-                            </button>
+                        <div className="result-header">
+                            <div>
+                                <p className="section-kicker">{isProfessional ? 'Result' : 'Generated Draft'}</p>
+                                <h3>Votre lettre de motivation</h3>
+                            </div>
+                            <div className="result-actions">
+                                <button onClick={copyToClipboard} className="secondary-btn" type="button">
+                                    📋 Copier
+                                </button>
+                                <button onClick={downloadLetter} className="secondary-btn" type="button">
+                                    ⬇ Télécharger
+                                </button>
+                            </div>
                         </div>
                         <pre>{generatedLetter}</pre>
                     </div>
                 )}
+                </div>
             </div>
-        </div>
+        </section>
     );
 };
 
