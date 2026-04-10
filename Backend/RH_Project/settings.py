@@ -1,8 +1,24 @@
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def load_local_env(env_path):
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding='utf-8').splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+
+        key, value = line.split('=', 1)
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+load_local_env(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -27,7 +43,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'coresheaders',
+    'corsheaders',
+    'cover_letter',
+    'interview',
+    'cv_tools',
 ]
 
 MIDDLEWARE = [
@@ -116,3 +135,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # URL de React en dev
 ]
+
+HF_API_TOKEN = os.getenv('HF_API_TOKEN', '')
+HF_API_URL = os.getenv(
+    'HF_API_URL',
+    'https://router.huggingface.co/v1/chat/completions',
+)
+HF_MODEL = os.getenv('HF_MODEL', 'Qwen/Qwen2.5-7B-Instruct:featherless-ai')
