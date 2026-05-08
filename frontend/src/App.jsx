@@ -1,158 +1,197 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
+import api from './api'
+import Auth from './components/Auth'
 import CoverLetter from './components/CoverLetter'
 import Interview from './components/Interview'
 import CvMatch from './components/CvMatch'
 import CvRewrite from './components/CvRewrite'
-import { UI_VARIANT, isProfessionalUI } from './uiVariant'
+import History from './components/History'
+import HrCvRanking from './components/HrCvRanking'
+import HrInterviewGuide from './components/HrInterviewGuide'
+import { UI_VARIANT } from './uiVariant'
+
+const modes = {
+  coverLetter: {
+    eyebrow: 'Candidature',
+    statValue: 'Qualité du dossier',
+  },
+  interview: {
+    eyebrow: 'Entretien',
+    statValue: 'Préparation candidat',
+  },
+  cvMatch: {
+    eyebrow: 'Analyse CV',
+    statValue: 'Pertinence du profil',
+  },
+  cvRewrite: {
+    eyebrow: 'Reformulation',
+    statValue: 'Clarté du CV',
+  },
+  history: {
+    eyebrow: 'Suivi',
+    statValue: 'Traçabilité',
+  },
+  hrInterviewGuide: {
+    eyebrow: 'Guide RH',
+    statValue: 'Questions utiles',
+  },
+  hrCvRanking: {
+    eyebrow: 'Sélection RH',
+    statValue: 'CV gagnants',
+  },
+}
+
+const candidateTabs = [
+  { id: 'coverLetter', label: 'Lettre' },
+  { id: 'interview', label: 'Entretien' },
+  { id: 'cvMatch', label: 'Matching' },
+  { id: 'cvRewrite', label: 'Reformulation' },
+  { id: 'history', label: 'Historique' },
+]
+
+const advisorTabs = [
+  { id: 'hrInterviewGuide', label: 'Questions entretien' },
+  { id: 'hrCvRanking', label: 'Classement CV' },
+  { id: 'history', label: 'Historique' },
+]
 
 function App() {
-  const [activeTab, setActiveTab] = useState('coverLetter');
-  const activeMode = activeTab === 'coverLetter'
-    ? {
-        eyebrow: 'Writing Studio',
-        title: 'Shape sharper applications with less guesswork.',
-        description: 'Switch between a tailored cover-letter generator and an interview coach built to help you rehearse with confidence.',
-        statLabel: 'Focus',
-        statValue: 'Application quality',
+  const [activeTab, setActiveTab] = useState('coverLetter')
+  const [user, setUser] = useState(null)
+  const [checkingAuth, setCheckingAuth] = useState(true)
+  const activeMode = modes[activeTab]
+  const tabs = user?.role === 'conseiller_rh' ? advisorTabs : candidateTabs
+
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      try {
+        const response = await api.get('/api/accounts/me/')
+        setUser(response.data.user)
+        if (response.data.user.role === 'conseiller_rh') {
+          setActiveTab('hrInterviewGuide')
+        }
+      } catch {
+        setUser(null)
+      } finally {
+        setCheckingAuth(false)
       }
-    : activeTab === 'interview'
-    ? {
-        eyebrow: 'Interview Lab',
-        title: 'Train your answers before the recruiter asks.',
-        description: 'Practice realistic questions, get structured feedback, and refine your pitch for the role you want.',
-        statLabel: 'Focus',
-        statValue: 'Interview readiness',
-      }
-    : activeTab === 'cvMatch'
-    ? {
-        eyebrow: 'Match Scanner',
-        title: 'Measure how well the CV fits the offer.',
-        description: 'Compare a CV against a job description and identify the missing signals that can improve your application.',
-        statLabel: 'Focus',
-        statValue: 'CV relevance',
-      }
-    : {
-        eyebrow: 'Rewrite Desk',
-        title: 'Refine one CV section without losing accuracy.',
-        description: 'Select a section, rewrite it more clearly, and compare the before and after version instantly.',
-        statLabel: 'Focus',
-        statValue: 'CV clarity',
-      };
+    }
+
+    loadCurrentUser()
+  }, [])
+
+  const logout = async () => {
+    await api.post('/api/accounts/logout/')
+    setUser(null)
+    setActiveTab('coverLetter')
+  }
+
+  const handleAuthenticated = (authenticatedUser) => {
+    setUser(authenticatedUser)
+    setActiveTab(authenticatedUser.role === 'conseiller_rh' ? 'hrInterviewGuide' : 'coverLetter')
+  }
+
+  if (checkingAuth) {
+    return (
+      <div className="App">
+        <div className="loading-screen">Chargement du portail...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Auth onAuthenticated={handleAuthenticated} />
+  }
 
   return (
     <div className={`App app--${UI_VARIANT}`}>
       <div className="page-shell">
-        <header className={`topbar ${isProfessionalUI ? 'topbar--professional' : ''}`}>
+        <header className="topbar">
           <div className="brand-block">
             <span className="brand-mark">CV</span>
             <div>
               <p className="brand-name">Career Copilot</p>
-              <p className="brand-subtitle">
-                {isProfessionalUI
-                  ? 'Smart tools for applications and interviews'
-                  : 'Portfolio tools for applications and interview prep'}
-              </p>
+              <p className="brand-subtitle">Assistant RH pour candidatures et entretiens</p>
             </div>
           </div>
           <nav className="nav-buttons" aria-label="Sections">
-            <button
-              className={`nav-btn ${activeTab === 'coverLetter' ? 'active' : ''}`}
-              onClick={() => setActiveTab('coverLetter')}
-            >
-              Lettre de motivation
-            </button>
-            <button
-              className={`nav-btn ${activeTab === 'interview' ? 'active' : ''}`}
-              onClick={() => setActiveTab('interview')}
-            >
-              Simulation d'entretien
-            </button>
-            <button
-              className={`nav-btn ${activeTab === 'cvMatch' ? 'active' : ''}`}
-              onClick={() => setActiveTab('cvMatch')}
-            >
-              Matching CV / offre
-            </button>
-            <button
-              className={`nav-btn ${activeTab === 'cvRewrite' ? 'active' : ''}`}
-              onClick={() => setActiveTab('cvRewrite')}
-            >
-              Reformulation CV
-            </button>
+            {tabs.map((tab) => (
+              <button
+                className={`nav-btn ${activeTab === tab.id ? 'active' : ''}`}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
           </nav>
+          <div className="user-menu">
+            <button className="profile-trigger" type="button" aria-label="Menu utilisateur">
+              <span className="avatar-mark">
+                {(user.first_name || user.username || 'U').slice(0, 1).toUpperCase()}
+              </span>
+              <span className="profile-name">{user.first_name || user.username}</span>
+            </button>
+            <div className="profile-popover">
+              <span>{user.role_label}</span>
+              <button type="button" onClick={logout}>
+                Déconnexion
+              </button>
+            </div>
+          </div>
         </header>
 
-        {isProfessionalUI ? (
-          <section className="hero-panel hero-panel--professional">
-            <div className="hero-copy">
-              <p className="eyebrow">{activeMode.eyebrow}</p>
-              <h1>
-                {activeTab === 'coverLetter'
-                  ? 'Professional application support.'
-                  : activeTab === 'interview'
-                  ? 'Interview preparation that stays focused.'
-                  : activeTab === 'cvMatch'
-                  ? 'CV matching analysis for a clearer fit.'
-                  : 'CV rewriting focused on stronger wording.'}
-              </h1>
-              <p className="hero-description">
-                {activeTab === 'coverLetter'
-                  ? 'Create a clear, tailored cover letter from your profile and the job description.'
-                  : activeTab === 'interview'
-                  ? 'Practice job-specific questions and review structured feedback after each answer.'
-                  : activeTab === 'cvMatch'
-                  ? 'Compare a CV to a job offer, review the score, and identify the missing skills to highlight.'
-                  : 'Rewrite one CV section at a time and compare the original text with a stronger version.'}
-              </p>
+        <section className="hero-panel">
+          <div className="hero-copy">
+            <p className="eyebrow">{activeMode.eyebrow}</p>
+            <h1>
+              {activeTab === 'coverLetter'
+                ? 'Rédiger une candidature claire et ciblée.'
+                : activeTab === 'interview'
+                ? 'Préparer un entretien avec des retours structurés.'
+                : activeTab === 'cvMatch'
+                ? 'Mesurer l’adéquation entre un CV et une offre.'
+                : activeTab === 'cvRewrite'
+                ? 'Améliorer une section de CV avec précision.'
+                : activeTab === 'hrInterviewGuide'
+                ? 'Préparer les questions à poser aux candidats.'
+                : activeTab === 'hrCvRanking'
+                ? 'Classer les CV et choisir les meilleurs profils.'
+                : 'Suivre les actions réalisées sur le portail.'}
+            </h1>
+            <p className="hero-description">
+              {user.role === 'conseiller_rh'
+                ? 'Mode conseiller RH: accompagnez les candidats, analysez leurs supports et gardez une trace des actions.'
+                : 'Mode candidat: préparez vos candidatures, entraînez-vous et retrouvez vos résultats dans l’historique.'}
+            </p>
+          </div>
+          <div className="hero-metrics">
+            <div className="metric-card">
+              <span className="hero-card-label">Acteur</span>
+              <strong>{user.role_label}</strong>
             </div>
-            <div className="hero-metrics">
-              <div className="metric-card">
-                <span className="hero-card-label">Mode</span>
-                <strong>
-                  {activeTab === 'coverLetter'
-                    ? 'Cover Letter'
-                    : activeTab === 'interview'
-                    ? 'Interview Coach'
-                    : activeTab === 'cvMatch'
-                    ? 'CV Match Analyzer'
-                    : 'CV Rewrite Assistant'}
-                </strong>
-              </div>
-              <div className="metric-card">
-                <span className="hero-card-label">Experience</span>
-                <strong>Clean, concise, and recruiter-ready</strong>
-              </div>
+            <div className="metric-card">
+              <span className="hero-card-label">Objectif</span>
+              <strong>{activeMode.statValue}</strong>
             </div>
-          </section>
-        ) : (
-          <section className="hero-panel">
-            <div className="hero-copy">
-              <p className="eyebrow">{activeMode.eyebrow}</p>
-              <h1>{activeMode.title}</h1>
-              <p className="hero-description">{activeMode.description}</p>
-            </div>
-            <div className="hero-aside">
-              <div className="hero-card">
-                <span className="hero-card-label">{activeMode.statLabel}</span>
-                <strong>{activeMode.statValue}</strong>
-              </div>
-              <div className="hero-card muted">
-                <span className="hero-card-label">Tools</span>
-                <strong>AI-assisted drafting and feedback</strong>
-              </div>
-            </div>
-          </section>
-        )}
+          </div>
+        </section>
 
         <main>
-        {activeTab === 'coverLetter'
-          ? <CoverLetter uiVariant={UI_VARIANT} />
-          : activeTab === 'interview'
-          ? <Interview uiVariant={UI_VARIANT} />
-          : activeTab === 'cvMatch'
-          ? <CvMatch uiVariant={UI_VARIANT} />
-          : <CvRewrite uiVariant={UI_VARIANT} />}
+          {activeTab === 'coverLetter'
+            ? <CoverLetter uiVariant={UI_VARIANT} />
+            : activeTab === 'interview'
+            ? <Interview uiVariant={UI_VARIANT} />
+            : activeTab === 'cvMatch'
+            ? <CvMatch uiVariant={UI_VARIANT} />
+            : activeTab === 'cvRewrite'
+            ? <CvRewrite uiVariant={UI_VARIANT} />
+            : activeTab === 'hrInterviewGuide'
+            ? <HrInterviewGuide uiVariant={UI_VARIANT} />
+            : activeTab === 'hrCvRanking'
+            ? <HrCvRanking uiVariant={UI_VARIANT} />
+            : <History uiVariant={UI_VARIANT} />}
         </main>
       </div>
     </div>

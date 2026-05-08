@@ -1,6 +1,14 @@
+from django.conf import settings
 from django.db import models
 
 class InterviewSession(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='interview_sessions',
+        null=True,
+        blank=True,
+    )
     job_title = models.CharField(max_length=100)
     cv_text = models.TextField()
     total_score = models.IntegerField(default=0)

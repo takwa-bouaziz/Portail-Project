@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 const sectionOptions = [
-  { value: 'Professional Summary', label: 'Professional Summary' },
-  { value: 'Experience', label: 'Experience' },
-  { value: 'Skills', label: 'Skills' },
-  { value: 'Education', label: 'Education' },
-  { value: 'Projects', label: 'Projects' },
+  { value: 'Professional Summary', label: 'Résumé professionnel' },
+  { value: 'Experience', label: 'Expérience' },
+  { value: 'Skills', label: 'Compétences' },
+  { value: 'Education', label: 'Formation' },
+  { value: 'Projects', label: 'Projets' },
 ];
 
 function CvRewrite({ uiVariant }) {
@@ -23,7 +23,7 @@ function CvRewrite({ uiVariant }) {
     setResult(null);
 
     try {
-      const response = await axios.post('http://localhost:8000/api/cv-tools/rewrite/', {
+      const response = await api.post('/api/cv-tools/rewrite/', {
         section_name: sectionName,
         section_text: sectionText,
         target_role: targetRole,
@@ -32,7 +32,7 @@ function CvRewrite({ uiVariant }) {
       setResult(response.data);
     } catch (error) {
       console.error('Error rewriting CV section:', error);
-      alert('Error rewriting the CV section. Please check the backend.');
+      alert('Erreur lors de la reformulation. Vérifiez que le backend est lancé.');
     } finally {
       setLoading(false);
     }
@@ -43,39 +43,39 @@ function CvRewrite({ uiVariant }) {
 
     try {
       await navigator.clipboard.writeText(result.rewritten_text);
-      alert('Rewritten section copied to clipboard.');
+      alert('Section reformulée copiée.');
     } catch (error) {
       console.error('Clipboard error:', error);
-      alert('Unable to copy the rewritten section.');
+      alert('Impossible de copier la section reformulée.');
     }
   };
 
   return (
     <section className={`tool-layout fade-in ${isProfessional ? 'tool-layout--professional' : ''}`}>
       <div className="section-heading">
-        <p className="section-kicker">CV Rewriting</p>
+        <p className="section-kicker">Reformulation CV</p>
         <h2>
           {isProfessional
-            ? 'Rewrite one CV section at a time.'
-            : 'Improve a weak section without rewriting the whole CV from scratch.'}
+            ? 'Reformuler une section du CV.'
+            : 'Améliorez une section faible sans réécrire tout le CV.'}
         </h2>
         <p className="subtitle">
           {isProfessional
-            ? 'Choose a section, paste the original version, and compare the before/after result.'
-            : 'Select the section you want to improve, add the target role if you have one, and review a cleaner rewritten version.'}
+            ? 'Choisissez une section, collez la version actuelle et comparez le résultat.'
+            : 'Sélectionnez la section à améliorer, ajoutez le poste cible, puis récupérez une version plus claire.'}
         </p>
       </div>
 
       <div className={`tool-grid ${isProfessional ? 'tool-grid--professional' : ''}`}>
         {!isProfessional && (
           <aside className="info-panel">
-            <span className="panel-badge">Best use</span>
-            <h3>Improve clarity without changing the truth.</h3>
-            <p>The assistant keeps your real experience, but rewrites the wording so the section sounds clearer and more targeted.</p>
+            <span className="panel-badge">Objectif</span>
+            <h3>Clarifier sans déformer l’expérience.</h3>
+            <p>L’assistant conserve le fond, mais améliore la formulation pour rendre la section plus lisible et ciblée.</p>
             <ul className="feature-list">
-              <li>Choose a CV section to improve.</li>
-              <li>Compare original and rewritten versions side by side.</li>
-              <li>Copy the improved version directly into your CV.</li>
+              <li>Choisissez une section du CV.</li>
+              <li>Comparez la version avant et après.</li>
+              <li>Copiez directement la version améliorée.</li>
             </ul>
           </aside>
         )}
@@ -84,7 +84,7 @@ function CvRewrite({ uiVariant }) {
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="input-group">
-                <label>CV section</label>
+                <label>Section du CV</label>
                 <select
                   className="select-input"
                   value={sectionName}
@@ -99,28 +99,28 @@ function CvRewrite({ uiVariant }) {
               </div>
 
               <div className="input-group">
-                <label>Target role</label>
+                <label>Poste cible</label>
                 <input
                   value={targetRole}
                   onChange={(event) => setTargetRole(event.target.value)}
-                  placeholder="ex: Full Stack Developer"
+                  placeholder="ex: Développeur Full Stack"
                 />
               </div>
             </div>
 
             <div className="input-group">
-              <label>Original section</label>
+              <label>Section originale</label>
               <textarea
                 value={sectionText}
                 onChange={(event) => setSectionText(event.target.value)}
-                placeholder="Paste the selected CV section here..."
+                placeholder="Collez ici la section du CV à améliorer..."
                 rows="10"
                 required
               />
             </div>
 
             <button type="submit" className="primary" disabled={loading}>
-              {loading ? <span className="loading-dots">Rewriting section</span> : 'Rewrite this section'}
+              {loading ? <span className="loading-dots">Reformulation en cours</span> : 'Reformuler cette section'}
             </button>
           </form>
 
@@ -128,29 +128,29 @@ function CvRewrite({ uiVariant }) {
             <div className="result-box">
               <div className="result-header">
                 <div>
-                  <p className="section-kicker">Before / After</p>
+                  <p className="section-kicker">Avant / Après</p>
                   <h3>{result.section_name}</h3>
                 </div>
                 <div className="result-actions">
                   <button onClick={copyToClipboard} className="secondary-btn" type="button">
-                    Copy rewritten version
+                    Copier la version reformulée
                   </button>
                 </div>
               </div>
 
               <div className="before-after-grid">
                 <div className="mini-panel">
-                  <h4>Before</h4>
+                  <h4>Avant</h4>
                   <pre>{result.original_text}</pre>
                 </div>
                 <div className="mini-panel">
-                  <h4>After</h4>
+                  <h4>Après</h4>
                   <pre>{result.rewritten_text}</pre>
                 </div>
               </div>
 
               <div className="mini-panel">
-                <h4>Improvement notes</h4>
+                <h4>Notes d’amélioration</h4>
                 <ul className="feature-list compact-list">
                   {result.improvement_notes?.map((item, index) => (
                     <li key={`note-${index}`}>{item}</li>
