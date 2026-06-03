@@ -62,7 +62,8 @@ def call_hf_api(prompt, max_new_tokens=500):
             "parameters": {"max_new_tokens": max_new_tokens},
         }
 
-    response = requests.post(url, headers=headers, json=payload, timeout=60)
+    timeout = int(getattr(settings, "HF_API_TIMEOUT", 120))
+    response = requests.post(url, headers=headers, json=payload, timeout=timeout)
     response.raise_for_status()
     result = response.json()
 

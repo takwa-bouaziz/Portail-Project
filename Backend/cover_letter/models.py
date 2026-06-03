@@ -1,7 +1,15 @@
+from django.conf import settings
 from django.db import models
 
 # Create your models here.
 class CoverLetter(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='cover_letters',
+        null=True,
+        blank=True,
+    )
     candidate_name = models.CharField(max_length=100)
     job_title = models.CharField(max_length=100)
     company_name = models.CharField(max_length=100)

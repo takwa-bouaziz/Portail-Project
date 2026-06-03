@@ -39,6 +39,7 @@ def generate_cover_letter(request):
 
     # Save to database
     cover_letter = CoverLetter.objects.create(
+        user=request.user if request.user.is_authenticated else None,
         candidate_name=candidate_name,
         job_title=job_title,
         company_name=company_name,

@@ -15,7 +15,11 @@ def start_interview(request):
         return Response({"error": "job_title and cv_text are required"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Create session
-    session = InterviewSession.objects.create(job_title=job_title, cv_text=cv_text)
+    session = InterviewSession.objects.create(
+        user=request.user if request.user.is_authenticated else None,
+        job_title=job_title,
+        cv_text=cv_text,
+    )
 
     # Prompt to generate 5 questions
     prompt = f"""

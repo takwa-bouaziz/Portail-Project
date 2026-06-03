@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 const scoreTone = (score) => {
   if (score >= 75) return 'score-good';
@@ -23,7 +23,7 @@ function CvMatch({ uiVariant }) {
       setCvText(content);
     } catch (error) {
       console.error('Error reading CV file:', error);
-      alert('Unable to read this file. Please upload a text-based file or paste the CV.');
+      alert('Impossible de lire ce fichier. Importez un fichier texte ou collez le CV.');
     }
   };
 
@@ -33,14 +33,14 @@ function CvMatch({ uiVariant }) {
     setResult(null);
 
     try {
-      const response = await axios.post('http://localhost:8000/api/cv-tools/match/', {
+      const response = await api.post('/api/cv-tools/match/', {
         cv_text: cvText,
         job_description: jobDescription,
       });
       setResult(response.data);
     } catch (error) {
       console.error('Error analyzing CV match:', error);
-      alert('Error analyzing the CV match. Please check the backend.');
+      alert('Erreur lors de l’analyse. Vérifiez que le backend est lancé.');
     } finally {
       setLoading(false);
     }
@@ -49,29 +49,29 @@ function CvMatch({ uiVariant }) {
   return (
     <section className={`tool-layout fade-in ${isProfessional ? 'tool-layout--professional' : ''}`}>
       <div className="section-heading">
-        <p className="section-kicker">CV Matching</p>
+        <p className="section-kicker">Matching CV / offre</p>
         <h2>
           {isProfessional
-            ? 'Compare a CV against a job offer.'
-            : 'Check how closely your CV matches the role before you apply.'}
+            ? 'Comparer un CV à une offre d’emploi.'
+            : 'Vérifiez si votre CV correspond au poste avant de candidater.'}
         </h2>
         <p className="subtitle">
           {isProfessional
-            ? 'Paste the CV and offer, then review the score, missing skills, and improvement suggestions.'
-            : 'Use a pasted CV or a text upload, compare it to the offer, and get concrete advice to strengthen the application.'}
+            ? 'Collez le CV et l’offre, puis consultez le score, les compétences manquantes et les suggestions.'
+            : 'Importez ou collez un CV, comparez-le à l’offre, puis récupérez des conseils concrets.'}
         </p>
       </div>
 
       <div className={`tool-grid ${isProfessional ? 'tool-grid--professional' : ''}`}>
         {!isProfessional && (
           <aside className="info-panel accent-panel">
-            <span className="panel-badge">What you get</span>
-            <h3>Useful before every application.</h3>
-            <p>The analysis highlights where your CV already aligns with the role and what should be made more visible to recruiters.</p>
+            <span className="panel-badge">Analyse</span>
+            <h3>Utile avant chaque candidature.</h3>
+            <p>L’analyse montre ce qui correspond déjà au poste et ce qui doit être rendu plus visible.</p>
             <ul className="feature-list">
-              <li>A matching score from 0 to 100.</li>
-              <li>Missing skills or weak signals in the CV.</li>
-              <li>Specific suggestions to improve wording and relevance.</li>
+              <li>Un score de correspondance sur 100.</li>
+              <li>Les compétences manquantes ou peu visibles.</li>
+              <li>Des suggestions de reformulation ciblées.</li>
             </ul>
           </aside>
         )}
@@ -79,35 +79,35 @@ function CvMatch({ uiVariant }) {
         <div className="card">
           <form onSubmit={handleSubmit}>
             <div className="input-group">
-              <label>Upload CV text file</label>
+              <label>Importer un CV texte</label>
               <input type="file" accept=".txt,.md,.rtf" onChange={handleFileUpload} />
-              <p className="helper-text">You can also paste the CV manually below.</p>
+              <p className="helper-text">Vous pouvez aussi coller le contenu manuellement.</p>
             </div>
 
             <div className="input-group">
-              <label>CV content</label>
+              <label>Contenu du CV</label>
               <textarea
                 value={cvText}
                 onChange={(event) => setCvText(event.target.value)}
-                placeholder="Paste the CV here..."
+                placeholder="Collez le CV ici..."
                 rows="9"
                 required
               />
             </div>
 
             <div className="input-group">
-              <label>Job offer</label>
+              <label>Offre d’emploi</label>
               <textarea
                 value={jobDescription}
                 onChange={(event) => setJobDescription(event.target.value)}
-                placeholder="Paste the job description here..."
+                placeholder="Collez la description du poste ici..."
                 rows="9"
                 required
               />
             </div>
 
             <button type="submit" className="primary" disabled={loading}>
-              {loading ? <span className="loading-dots">Analyzing match</span> : 'Analyze CV matching'}
+              {loading ? <span className="loading-dots">Analyse en cours</span> : 'Analyser le matching'}
             </button>
           </form>
 
@@ -115,8 +115,8 @@ function CvMatch({ uiVariant }) {
             <div className="result-box">
               <div className="result-header result-header--stack">
                 <div>
-                  <p className="section-kicker">Analysis Result</p>
-                  <h3>CV / job offer matching</h3>
+                  <p className="section-kicker">Résultat</p>
+                  <h3>Matching CV / offre</h3>
                 </div>
                 <div className={`score-pill ${scoreTone(result.matching_score)}`}>
                   {result.matching_score}%
@@ -127,7 +127,7 @@ function CvMatch({ uiVariant }) {
 
               <div className="result-columns">
                 <div className="mini-panel">
-                  <h4>Strengths</h4>
+                  <h4>Points forts</h4>
                   <ul className="feature-list compact-list">
                     {result.strengths?.map((item, index) => (
                       <li key={`strength-${index}`}>{item}</li>
@@ -136,7 +136,7 @@ function CvMatch({ uiVariant }) {
                 </div>
 
                 <div className="mini-panel">
-                  <h4>Missing skills</h4>
+                  <h4>Compétences manquantes</h4>
                   <ul className="feature-list compact-list">
                     {result.missing_skills?.map((item, index) => (
                       <li key={`missing-${index}`}>{item}</li>
@@ -146,7 +146,7 @@ function CvMatch({ uiVariant }) {
               </div>
 
               <div className="mini-panel">
-                <h4>Suggestions to improve the CV</h4>
+                <h4>Suggestions pour améliorer le CV</h4>
                 <ul className="feature-list compact-list">
                   {result.improvement_suggestions?.map((item, index) => (
                     <li key={`suggestion-${index}`}>{item}</li>

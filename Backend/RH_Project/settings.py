@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'accounts',
     'cover_letter',
     'interview',
     'cv_tools',
@@ -134,7 +135,20 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # URL de React en dev
+    "http://127.0.0.1:5173",
 ]
+
+CORS_ALLOW_CREDENTIALS = True
+
+REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "RH_Project.authentication.CsrfExemptSessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+    ],
+}
 
 HF_API_TOKEN = os.getenv('HF_API_TOKEN', '')
 HF_API_URL = os.getenv(
@@ -142,3 +156,4 @@ HF_API_URL = os.getenv(
     'https://router.huggingface.co/v1/chat/completions',
 )
 HF_MODEL = os.getenv('HF_MODEL', 'Qwen/Qwen2.5-7B-Instruct:featherless-ai')
+HF_API_TIMEOUT = os.getenv('HF_API_TIMEOUT', '120')
