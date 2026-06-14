@@ -165,6 +165,84 @@ npm run preview
 npm run lint
 ```
 
+## Deploiement portfolio
+
+Le projet se deploie plus simplement en deux services :
+
+- Backend Django : Render, Railway ou un service Python equivalent.
+- Frontend React/Vite : Vercel, Netlify ou un service static site equivalent.
+
+### Backend Django
+
+Dans le service backend, utiliser le dossier racine :
+
+```text
+Backend
+```
+
+Installer les dependances et preparer les fichiers statiques :
+
+```bash
+pip install -r requirements.txt
+python manage.py collectstatic --noinput
+python manage.py migrate
+```
+
+Commande de demarrage :
+
+```bash
+gunicorn RH_Project.wsgi:application
+```
+
+Variables d'environnement a configurer sur la plateforme :
+
+```env
+DJANGO_SECRET_KEY=une_cle_secrete_longue
+DJANGO_DEBUG=False
+DJANGO_ALLOWED_HOSTS=votre-backend.onrender.com
+CORS_ALLOWED_ORIGINS=https://votre-frontend.vercel.app
+CSRF_TRUSTED_ORIGINS=https://votre-frontend.vercel.app
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
+SESSION_COOKIE_SAMESITE=None
+CSRF_COOKIE_SAMESITE=None
+HF_API_TOKEN=votre_token_huggingface
+HF_API_URL=https://router.huggingface.co/v1/chat/completions
+HF_MODEL=Qwen/Qwen2.5-7B-Instruct:featherless-ai
+HF_API_TIMEOUT=120
+```
+
+Pour une demo portfolio, SQLite peut suffire. Pour un deploiement durable, utiliser PostgreSQL afin de ne pas perdre les comptes et historiques si le service redemarre ou si le disque est ephemeral.
+
+### Frontend Vite
+
+Dans le service frontend, utiliser le dossier racine :
+
+```text
+frontend
+```
+
+Commande de build :
+
+```bash
+npm install
+npm run build
+```
+
+Dossier de sortie :
+
+```text
+dist
+```
+
+Variable d'environnement :
+
+```env
+VITE_API_URL=https://votre-backend.onrender.com
+```
+
+Apres deploiement du frontend, copier son URL finale dans `CORS_ALLOWED_ORIGINS` et `CSRF_TRUSTED_ORIGINS` du backend, puis redeployer le backend.
+
 ## Routes API principales
 
 ### Authentification
